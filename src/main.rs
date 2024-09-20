@@ -24,6 +24,7 @@ struct InternetMonitor {
     longest_response_time: Arc<Mutex<f64>>, // Longest response time recorded
     last_log_file_name: Arc<Mutex<Option<String>>>, // Track the last log file name
     last_log_time: Arc<Mutex<Option<Instant>>>,
+    is_dark_mode: bool, // Flag for light/dark mode
 }
 
 impl Default for InternetMonitor {
@@ -40,12 +41,21 @@ impl Default for InternetMonitor {
             longest_response_time: Arc::new(Mutex::new(0.0)),
             last_log_file_name: Arc::new(Mutex::new(None)),
             last_log_time: Arc::new(Mutex::new(None)),
+            is_dark_mode: true, // Default to dark mode
         }
     }
 }
 
 impl eframe::App for InternetMonitor {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+        // Apply the current theme
+        if self.is_dark_mode {
+            ctx.set_visuals(egui::Visuals::dark());
+        } else {
+            ctx.set_visuals(egui::Visuals::light());
+        }
+
         // Calculate time since the last frame
         let frame_duration = Instant::now().duration_since(self.last_frame_time);
         let target_frame_duration = Duration::from_secs_f64(1.0 / 60.0); // 60 FPS
@@ -64,6 +74,11 @@ impl eframe::App for InternetMonitor {
 
             // Create a horizontal layout for buttons
             ui.horizontal(|ui| {
+                // Button to toggle light/dark mode
+                if ui.button("☀").clicked() {
+                    self.is_dark_mode = !self.is_dark_mode;
+                }
+
                 // Button to start/stop monitoring
                 if ui.button(if self.is_monitoring { "Stop Monitoring" } else { "Start Monitoring" }).clicked() {
                     self.is_monitoring = !self.is_monitoring;
